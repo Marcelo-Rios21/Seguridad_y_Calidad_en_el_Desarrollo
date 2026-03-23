@@ -77,3 +77,45 @@ input {
     background-color: #d1e7dd;
     color: #0f5132;
 }
+
+.container-wide {
+    width: 800px;
+}
+
+.actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.secondary {
+    background-color: #6c757d;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+}
+
+table th,
+table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+}
+
+table th {
+    background-color: #2d89ef;
+    color: white;
+}
+
+.error-text {
+    color: #842029;
+    display: block;
+    margin-top: 5px;
+    font-size: 0.9rem;
+}

@@ -19,9 +19,11 @@ public class SecurityConfig {
             http
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/", "/login", "/css/**").permitAll()
-                    .requestMatchers("/dashboard").authenticated()
-                    .anyRequest().authenticated()
-                )
+                .requestMatchers("/dashboard").authenticated()
+                .requestMatchers("/pacientes").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCION")
+                .requestMatchers("/pacientes/nuevo", "/pacientes/guardar").hasAnyRole("ADMIN", "RECEPCION")
+                .anyRequest().authenticated()
+            )
                 .formLogin(form -> form
                     .loginPage("/login")
                     .defaultSuccessUrl("/dashboard", true)
