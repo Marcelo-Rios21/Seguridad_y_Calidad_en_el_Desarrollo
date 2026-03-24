@@ -2,50 +2,54 @@ package com.veterinaria.veterinaria.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.veterinaria.veterinaria.security.CustomUserDetailsService;
+import com.veterinaria.veterinaria.security.JwtAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
 private final CustomUserDetailsService customUserDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(CustomUserDetailsService customUserDetailsService) {
+    public SecurityConfig(CustomUserDetailsService customUserDetailsService,
+                          JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.customUserDetailsService = customUserDetailsService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         try {
             http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/", "/login", "/css/**").permitAll()
                     .requestMatchers("/api/auth/login").permitAll()
-                    .requestMatchers("/dashboard").authenticated()
-                    .requestMatchers("/pacientes").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCION")
-                    .requestMatchers("/pacientes/nuevo", "/pacientes/guardar").hasAnyRole("ADMIN", "RECEPCION")
-                    .requestMatchers("/citas").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCION")
-                    .requestMatchers("/citas/nueva", "/citas/guardar").hasAnyRole("ADMIN", "RECEPCION")
-                    .anyRequest().authenticated()
+
+                    .requestMatchers(HttpMethod.GET, "/api/pacientes")
+                        .hasAnyRole("ADMIN", "VETERINARIO", "RECEPCION")
+                    .requestMatchers(HttpMethod.POST, "/api/pacientes")
+                        .hasAnyRole("ADMIN", "RECEPCION")
+
+                    .requestMatchers(HttpMethod.GET, "/api/citas")
+                        .hasAnyRole("ADMIN", "VETERINARIO", "RECEPCION")
+                    .requestMatchers(HttpMethod.POST, "/api/citas")
+                        .hasAnyRole("ADMIN", "RECEPCION")
+
+                    .anyRequest().permitAll()
                 )
-                .formLogin(form -> form
-                    .loginPage("/login")
-                    .defaultSuccessUrl("/dashboard", true)
-                    .failureUrl("/login?error")
-                    .permitAll()
-                )
-                .logout(logout -> logout
-                    .logoutSuccessUrl("/login?logout")
-                    .permitAll()
-                )
-                .authenticationProvider(authenticationProvider());
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
             return http.build();
         } catch (Exception e) {
