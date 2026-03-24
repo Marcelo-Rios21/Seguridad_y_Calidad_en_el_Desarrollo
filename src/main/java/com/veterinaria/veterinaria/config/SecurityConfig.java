@@ -2,23 +2,32 @@ package com.veterinaria.veterinaria.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+
+import com.veterinaria.veterinaria.security.CustomUserDetailsService;
 
 @Configuration
 public class SecurityConfig {
+private final CustomUserDetailsService customUserDetailsService;
+
+    public SecurityConfig(CustomUserDetailsService customUserDetailsService) {
+        this.customUserDetailsService = customUserDetailsService;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         try {
             http
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/", "/login", "/css/**").permitAll()
+                    .requestMatchers("/api/auth/login").permitAll()
                     .requestMatchers("/dashboard").authenticated()
                     .requestMatchers("/pacientes").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCION")
                     .requestMatchers("/pacientes/nuevo", "/pacientes/guardar").hasAnyRole("ADMIN", "RECEPCION")
@@ -35,7 +44,8 @@ public class SecurityConfig {
                 .logout(logout -> logout
                     .logoutSuccessUrl("/login?logout")
                     .permitAll()
-                );
+                )
+                .authenticationProvider(authenticationProvider());
 
             return http.build();
         } catch (Exception e) {
@@ -44,26 +54,19 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password(passwordEncoder.encode("1234"))
-                .roles("ADMIN")
-                .build();
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(customUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
 
-        UserDetails veterinario = User.builder()
-                .username("vet")
-                .password(passwordEncoder.encode("vet1234"))
-                .roles("VETERINARIO")
-                .build();
-
-        UserDetails recepcion = User.builder()
-                .username("recepcion")
-                .password(passwordEncoder.encode("recepcion1234"))
-                .roles("RECEPCION")
-                .build();
-
-        return new InMemoryUserDetailsManager(admin, veterinario, recepcion);
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) {
+        try {
+            return configuration.getAuthenticationManager();
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo crear AuthenticationManager.", e);
+        }
     }
 
     @Bean
