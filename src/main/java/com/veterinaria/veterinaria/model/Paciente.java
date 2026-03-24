@@ -1,26 +1,42 @@
 package com.veterinaria.veterinaria.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+@Entity
+@Table(name = "pacientes")
 public class Paciente {
-     private Long id;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @NotBlank(message = "El nombre es obligatorio.")
+    @Column(nullable = false, length = 100)
     private String nombre;
 
     @NotBlank(message = "La especie es obligatoria.")
+    @Column(nullable = false, length = 50)
     private String especie;
 
     @NotBlank(message = "La raza es obligatoria.")
+    @Column(nullable = false, length = 50)
     private String raza;
 
     @NotNull(message = "La edad es obligatoria.")
     @Min(value = 0, message = "La edad no puede ser negativa.")
+    @Column(nullable = false)
     private Integer edad;
 
     @NotBlank(message = "El dueño es obligatorio.")
+    @Column(nullable = false, length = 100)
     private String dueno;
 
     public Paciente() {
